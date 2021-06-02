@@ -1,0 +1,84 @@
+#r "Newtonsoft.Json"
+
+using System.Net;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json;
+
+[Function("CalculateModulStatus")]
+public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
+{
+    log.LogInformation("CalculateModuleStatusC# HTTP trigger function processed a request.");
+
+    string name = req.Query["name"];
+
+    string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+    dynamic data = JsonConvert.DeserializeObject(requestBody);
+    string studentNumber = req.Query["studentNumber"];
+    studentNumber = studentNumber ?? data?.studentNumber;
+    string name = req.Query["name"];
+    name= namer ?? data?.namer;
+    string mark = req.Query["mark"];
+    mark= mark ?? data?.mark;
+    string module = req.Query["module"];
+    module = module ?? data?.module;
+
+    if (studentNumber == null || name == null || mark == null || module == null)
+    {
+        return new BadRequestObjectResult("Please pass student, name, mark and module parameters");
+        
+    }
+    return MarkEntry(studentNumber, name, mark, module);
+  
+}
+
+
+private static IActionResult MarkEntry(string studentNumber, string name,
+ string mark, string module){
+     try{
+         string connectionString = "";
+         using (SqlConnection connection = new SqlConnection(connectionString)){
+
+             int mark = 0;
+
+             connection.Open();
+             String sql = $"SELECT * FROM KING WHERE studentNumbern= '{studentNumber}';";
+             using (SqCommand command = new SqlCommand(sql, connection)){
+                 using (SqlDataReader reader = command.ExecuteReader()){
+                     if (reader.HasRows){
+                            reader.Read();
+                            mark=reader.GetInt32(0);
+
+                            if (mark =< 48){
+                                return new BadRequestObjectResult("fail");
+                            }
+                            else if (mark == 49){
+                                return new BadRequestObjectResult("Condoned Pass");
+                            }
+                            else if (mark => 50 && mark = < 74 ){
+                                return new BadRequestObjectResult(" Pass");
+                            }
+                            else if ( mark => 75 && mark =<100){
+                                return new BadRequestObjectResult("pass with Distinction");
+                            }
+                            else{
+                                return new BadRequestObjectResult("no mark entry");
+                            }
+                     }
+                     else{
+                         return new BadRequestObjectResult("Error: Student Number " + studentNumber +
+                        " doesn't exist in the database");
+                     }
+                 }
+             }
+             sql = $"INERT INTO KING (studentNumber, name, mark, module) VALUES ({studentNumber},{name},{mark},{module};)";
+             using (SqCommand command = new SqlCommand(sql, connection)){
+                 command.ExecuteNonQuery();
+                 return(ActionResult)new OkObjectResult($"marks: { mark}")
+             }
+         }
+     }
+     catch(SqlException e){
+         console.writeLine(e.ToString());
+     }
+     return new Ba
